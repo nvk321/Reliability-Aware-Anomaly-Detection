@@ -1,0 +1,37 @@
+graph TD
+    subgraph SENSORS["Industrial Cyber-Physical Sensor Array"]
+        S1["Sensor 1: Flow Transmitter (FIT101)"]
+        S2["Sensor 2: Tank Level Indicator (LIT101)"]
+        S3["Sensor 3: Differential Pressure (DPIT301)"]
+        SM["Sensor M: pH / Chemical Analyzer (AIT202)"]
+    end
+
+    S1 --> OBS["Observed Multivariate Telemetry Window W_t"]
+    S2 --> OBS
+    S3 --> OBS
+    SM --> OBS
+
+    OBS --> DEV{"Observed Reading Deviates From Expected Pattern?"}
+
+    DEV -- "No (Nominal Readings)" --> NORM["Plant In Healthy Equilibrium<br/>No Alarm Triggered"]
+    
+    DEV -- "Yes (Significant Residual)" --> CAUSE{"What is the Root Origin of the Deviation?"}
+
+    CAUSE -- "Path A: True Physical Process Deviation" --> ATTACK["Genuine Cyber-Physical Attack or Process Fault<br/>• Valve forcefully manipulated<br/>• Tank overflow or pipe rupture<br/>• Multiple correlated sensors respond according to physical laws"]
+    
+    CAUSE -- "Path B: Instrument-Level Degradation" --> FAULT["Sensor Observation Corruption<br/>• High Gaussian electrical noise<br/>• Mechanical jamming (Stuck sensor)<br/>• Calibration drift over time<br/>• Physical plant remains completely healthy!"]
+
+    ATTACK --> CONV_A["Conventional Detectors (GDN, USAD, OmniAnomaly):<br/>Alarm Triggered<br/>(CORRECT EMERGENCY SHUTDOWN)"]
+    
+    FAULT --> CONV_F["Conventional Detectors (GDN, USAD, OmniAnomaly):<br/>Unweighted residual sum blows up S_global > tau<br/><b>CRITICAL FALSE EMERGENCY SHUTDOWN!</b><br/>(Costly downtime, wasted resources)"]
+
+    FAULT --> PROP["<b>PROPOSED RELIABILITY-AWARE PARADIGM (R-STNet)</b><br/>• Estimate Channel Trustworthiness r_i(t) in [0, 1]<br/>• Down-weight corrupted channel in system score<br/>• <b>Suppress false plant shutdown</b><br/>• Alert maintenance team to inspect faulty sensor"]
+
+    ATTACK --> PROP_A["<b>PROPOSED RELIABILITY-AWARE PARADIGM (R-STNet)</b><br/>• Correlated physical neighbors confirm real process deviation<br/>• High sensor reliability maintained<br/>• <b>Legitimate Cyber-Physical Alarm Triggered</b>"]
+
+    style SENSORS fill:#f8f9fa,stroke:#495057,stroke-width:2px
+    style FAULT fill:#ffe3e3,stroke:#e03131,stroke-width:2px
+    style ATTACK fill:#ffe8cc,stroke:#f76707,stroke-width:2px
+    style CONV_F fill:#ffc9c9,stroke:#c92a2a,stroke-width:2px
+    style PROP fill:#d3f9d8,stroke:#2b8a3e,stroke-width:2px
+    style PROP_A fill:#d8f5a2,stroke:#5c940d,stroke-width:2px

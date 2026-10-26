@@ -1,0 +1,731 @@
+[
+  {
+    "experiment": "E1_Clean",
+    "type": "clean",
+    "severity": 0.0,
+    "rate": 0.0,
+    "target_channels": null,
+    "seeds_evaluated": [
+      42
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7181628392484343,
+        "f1_std": 0.0,
+        "fpr_mean": 0.009241676161539435,
+        "fpr_std": 0.0,
+        "precision_mean": 0.899532067162125,
+        "recall_mean": 0.5976591075347476
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.27400569407298764,
+        "f1_std": 0.0,
+        "fpr_mean": 0.6213697936447652,
+        "fpr_std": 0.0,
+        "precision_mean": 0.1625661149974407,
+        "recall_mean": 0.8712509144111192
+      }
+    },
+    "reliability_summary": {}
+  },
+  {
+    "experiment": "E2_Noise_Low",
+    "type": "gaussian_noise",
+    "severity": 0.1,
+    "rate": 0.1,
+    "target_channels": [
+      3,
+      14,
+      28
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7182360890044581,
+        "f1_std": 5.763330495488119e-05,
+        "fpr_mean": 0.00923323627463392,
+        "fpr_std": 1.193580252667525e-05,
+        "precision_mean": 0.8996238388863077,
+        "recall_mean": 0.5977200682760303
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.27550898539603746,
+        "f1_std": 0.0011128205910485908,
+        "fpr_mean": 0.6408659323965059,
+        "fpr_std": 0.0004654962985403543,
+        "precision_mean": 0.16267287480582823,
+        "recall_mean": 0.8992928554011216
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.01703852352996667,
+        "std": 0.0003082132547663767
+      },
+      "r_clean_mean": {
+        "mean": 0.30262815952301025,
+        "std": 1.4932361364127143e-05
+      },
+      "separation": {
+        "mean": 0.28558963537216187,
+        "std": 0.0003120042730981432
+      },
+      "fault_localization_acc": {
+        "mean": 0.1491178087605152,
+        "std": 0.0029239318137091446
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E2_Noise_Med",
+    "type": "gaussian_noise",
+    "severity": 0.3,
+    "rate": 0.2,
+    "target_channels": [
+      3,
+      14,
+      28
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7182572010406408,
+        "f1_std": 0.00013072479412132567,
+        "fpr_mean": 0.00903067898890155,
+        "fpr_std": 0.00012113516558557921,
+        "precision_mean": 0.9014936430750958,
+        "recall_mean": 0.5969275786393563
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.2764104949155464,
+        "f1_std": 0.0005198417332300076,
+        "fpr_mean": 0.6491285816770055,
+        "fpr_std": 0.00030477225109113885,
+        "precision_mean": 0.16288083907335468,
+        "recall_mean": 0.9122774932943184
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.015373721408347288,
+        "std": 0.00010019248338995627
+      },
+      "r_clean_mean": {
+        "mean": 0.3025887807210286,
+        "std": 0.00010073274412798858
+      },
+      "separation": {
+        "mean": 0.28721506396929425,
+        "std": 0.0001746173424030605
+      },
+      "fault_localization_acc": {
+        "mean": 0.28700615029311055,
+        "std": 0.0009612879940182077
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E2_Noise_High",
+    "type": "gaussian_noise",
+    "severity": 0.5,
+    "rate": 0.3,
+    "target_channels": [
+      3,
+      14,
+      28
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7192595802920474,
+        "f1_std": 0.00025022486806253934,
+        "fpr_mean": 0.008093851542389332,
+        "fpr_std": 0.0001211351655855787,
+        "precision_mean": 0.9104594334302547,
+        "recall_mean": 0.5944281882467691
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.27618942067913355,
+        "f1_std": 0.00012495721325896474,
+        "fpr_mean": 0.6508081191712031,
+        "fpr_std": 0.0001407210364226215,
+        "precision_mean": 0.162692465881048,
+        "recall_mean": 0.9133747866374055
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.01344999484717846,
+        "std": 0.00019480741182531345
+      },
+      "r_clean_mean": {
+        "mean": 0.3024695912996928,
+        "std": 6.346722677727466e-05
+      },
+      "separation": {
+        "mean": 0.2890196045239766,
+        "std": 0.00025413427381050215
+      },
+      "fault_localization_acc": {
+        "mean": 0.3595851849781256,
+        "std": 0.0014165498540886085
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E3_Stuck_1Sensor",
+    "type": "stuck_constant",
+    "severity": 0.0,
+    "rate": 0.15,
+    "target_channels": [
+      10
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7181628392484343,
+        "f1_std": 0.0,
+        "fpr_mean": 0.009241676161539435,
+        "fpr_std": 0.0,
+        "precision_mean": 0.899532067162125,
+        "recall_mean": 0.5976591075347476
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.27400569407298764,
+        "f1_std": 0.0,
+        "fpr_mean": 0.6213697936447652,
+        "fpr_std": 0.0,
+        "precision_mean": 0.1625661149974407,
+        "recall_mean": 0.8712509144111192
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.9753037095069885,
+        "std": 0.0
+      },
+      "r_clean_mean": {
+        "mean": 0.25893356402715045,
+        "std": 0.0005287318418341842
+      },
+      "separation": {
+        "mean": -0.716370145479838,
+        "std": 0.0005287318418341842
+      },
+      "fault_localization_acc": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E3_Stuck_3Sensors",
+    "type": "stuck_constant",
+    "severity": 0.0,
+    "rate": 0.15,
+    "target_channels": [
+      10,
+      22,
+      35
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7170857810947798,
+        "f1_std": 0.001820448850725464,
+        "fpr_mean": 0.0096045912984766,
+        "fpr_std": 0.0006409870463281436,
+        "precision_mean": 0.8960515765630325,
+        "recall_mean": 0.5977200682760303
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.2707614895587674,
+        "f1_std": 0.0045027232631279675,
+        "fpr_mean": 0.6287378149132802,
+        "fpr_std": 0.01320435883248491,
+        "precision_mean": 0.16042521650349087,
+        "recall_mean": 0.8674103877103145
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.3301566739877065,
+        "std": 0.0010828643215170931
+      },
+      "r_clean_mean": {
+        "mean": 0.2779352565606435,
+        "std": 0.005059154616046996
+      },
+      "separation": {
+        "mean": -0.05222141742706299,
+        "std": 0.00416663324110827
+      },
+      "fault_localization_acc": {
+        "mean": 0.003046036697675955,
+        "std": 0.0006926994540188035
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E3_Stuck_5Sensors",
+    "type": "stuck_constant",
+    "severity": 0.0,
+    "rate": 0.15,
+    "target_channels": [
+      10,
+      15,
+      22,
+      35,
+      48
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.717507054641041,
+        "f1_std": 0.0009274194857709823,
+        "fpr_mean": 0.009452673334177321,
+        "fpr_std": 0.0002983950631668763,
+        "precision_mean": 0.8974828324547208,
+        "recall_mean": 0.5976591075347476
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.27367037142596856,
+        "f1_std": 0.0005577691781878162,
+        "fpr_mean": 0.6205848841625522,
+        "fpr_std": 0.0006740294689826097,
+        "precision_mean": 0.16240441521485713,
+        "recall_mean": 0.8691172884662278
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.5938258369763693,
+        "std": 0.0009920552411428717
+      },
+      "r_clean_mean": {
+        "mean": 0.24464933574199677,
+        "std": 0.0033672096501602784
+      },
+      "separation": {
+        "mean": -0.3491764962673187,
+        "std": 0.002774438597786777
+      },
+      "fault_localization_acc": {
+        "mean": 0.0017355363326121307,
+        "std": 0.0006549386914520103
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E4_Drift_Low",
+    "type": "drift",
+    "severity": 0.1,
+    "rate": 0.2,
+    "target_channels": [
+      7,
+      19,
+      41
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7182012748501233,
+        "f1_std": 0.000794538910601166,
+        "fpr_mean": 0.00906443853652361,
+        "fpr_std": 0.0005512480328415561,
+        "precision_mean": 0.9012098890641732,
+        "recall_mean": 0.5969885393806388
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.273862017649064,
+        "f1_std": 6.830943548625815e-05,
+        "fpr_mean": 0.621352913870954,
+        "fpr_std": 4.303514802372029e-05,
+        "precision_mean": 0.1624840693835222,
+        "recall_mean": 0.8707022677395756
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.004639884961458544,
+        "std": 0.0019309877060018964
+      },
+      "r_clean_mean": {
+        "mean": 0.297409325838089,
+        "std": 0.004371730797033514
+      },
+      "separation": {
+        "mean": 0.2927694320678711,
+        "std": 0.003573172308198075
+      },
+      "fault_localization_acc": {
+        "mean": 0.00396781654465241,
+        "std": 0.0013353024090647899
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E4_Drift_Med",
+    "type": "drift",
+    "severity": 0.3,
+    "rate": 0.2,
+    "target_channels": [
+      7,
+      19,
+      41
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7181479153315609,
+        "f1_std": 0.0009928025715028174,
+        "fpr_mean": 0.00915727729248428,
+        "fpr_std": 0.0006722305018100139,
+        "precision_mean": 0.9003640101784783,
+        "recall_mean": 0.597293343087052
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.2731820576671742,
+        "f1_std": 0.0005281763408367445,
+        "fpr_mean": 0.6224247795079546,
+        "fpr_std": 0.0007829558943872286,
+        "precision_mean": 0.1620500006584076,
+        "recall_mean": 0.8694220921726409
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.0032862731410811343,
+        "std": 0.0014056972315900993
+      },
+      "r_clean_mean": {
+        "mean": 0.2973486582438151,
+        "std": 0.004342160056904319
+      },
+      "separation": {
+        "mean": 0.29406238595644635,
+        "std": 0.0031580821801389207
+      },
+      "fault_localization_acc": {
+        "mean": 0.005023225025087747,
+        "std": 0.0019384533834649596
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  },
+  {
+    "experiment": "E4_Drift_High",
+    "type": "drift",
+    "severity": 0.5,
+    "rate": 0.2,
+    "target_channels": [
+      7,
+      19,
+      41
+    ],
+    "seeds_evaluated": [
+      42,
+      101,
+      2024
+    ],
+    "models": {
+      "iso_forest": {
+        "f1_mean": 0.7180692180687857,
+        "f1_std": 0.0010382655470076736,
+        "fpr_mean": 0.009182596953200827,
+        "fpr_std": 0.0006876306891866037,
+        "precision_mean": 0.900118415506666,
+        "recall_mean": 0.597293343087052
+      },
+      "stae": {
+        "f1_mean": 0.21685074656461303,
+        "f1_std": 0.0,
+        "fpr_mean": 1.0,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12161110246202433,
+        "recall_mean": 1.0
+      },
+      "rstnet_no_srm": {
+        "f1_mean": 0.21709181141439207,
+        "f1_std": 0.0,
+        "fpr_mean": 0.9985820989998734,
+        "fpr_std": 0.0,
+        "precision_mean": 0.12176275413632619,
+        "recall_mean": 1.0
+      },
+      "rstnet": {
+        "f1_mean": 0.27290729569553557,
+        "f1_std": 0.0006992661977549396,
+        "fpr_mean": 0.6229396126091911,
+        "fpr_std": 0.0011995926896806908,
+        "precision_mean": 0.16187149809836032,
+        "recall_mean": 0.8689953669836625
+      }
+    },
+    "reliability_summary": {
+      "r_corrupt_mean": {
+        "mean": 0.0026675445648531118,
+        "std": 0.000508782324578577
+      },
+      "r_clean_mean": {
+        "mean": 0.297297865152359,
+        "std": 0.004315052404028626
+      },
+      "separation": {
+        "mean": 0.29463032881418866,
+        "std": 0.003997492659199843
+      },
+      "fault_localization_acc": {
+        "mean": 0.005228631140448431,
+        "std": 0.00209432419135852
+      },
+      "fault_detection_recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "false_sensor_alarm_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    }
+  }
+]

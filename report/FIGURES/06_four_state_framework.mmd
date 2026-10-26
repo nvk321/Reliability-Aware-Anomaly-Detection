@@ -1,0 +1,26 @@
+flowchart TD
+    START["Online Inference at Time Step t:<br/>• Compute Reliability-Weighted System Anomaly Score S_sys(t)<br/>• Compute Channel Reliability Vector r(t) in [0, 1]^M"]
+
+    TEST_SYS{"Is System Anomaly Score Elevated?<br/>S_sys(t) >= tau_sys"}
+
+    START --> TEST_SYS
+
+    %% Left Branch: S_sys < tau_sys (System is Physically Healthy)
+    TEST_SYS -- "No: S_sys(t) < tau_sys<br/>(Process is Within Normal Bounds)" --> TEST_REL_LOW{"Are All Sensors Trustworthy?<br/>min_i r_i(t) >= theta_rel"}
+
+    TEST_REL_LOW -- "Yes: min_i r_i >= theta_rel" --> CASE_A["<b>CASE A: NORMAL OPERATION</b><br/>• System State: HEALTHY<br/>• Sensor Array: TRUSTWORTHY<br/>• Action: Continuous automated monitoring; nominal operation."]
+
+    TEST_REL_LOW -- "No: min_i r_i < theta_rel" --> CASE_B["<b>CASE B: ISOLATED SENSOR FAULT</b><br/>• System State: HEALTHY (Process safe)<br/>• Sensor Array: DEGRADED (Sensor k failed/drifted)<br/>• Pinpointed: FaultySensor = argmax_i [(1 - r_i) * z_i]<br/>• <b>Action: SUPPRESS FALSE PLANT SHUTDOWN!</b><br/>• Alert I&C maintenance team to recalibrate/replace sensor k."]
+
+    %% Right Branch: S_sys >= tau_sys (System Metric Indicates Anomaly)
+    TEST_SYS -- "Yes: S_sys(t) >= tau_sys<br/>(Multivariate Deviation Detected)" --> TEST_REL_HIGH{"Do Sensors Form a Trustworthy Consensus?<br/>mean_i r_i(t) >= theta_rel"}
+
+    TEST_REL_HIGH -- "Yes: mean_i r_i >= theta_rel" --> CASE_C["<b>CASE C: CRITICAL SYSTEM ANOMALY</b><br/>• System State: ANOMALOUS (Cyber-Attack / Process Rupture)<br/>• Sensor Array: HIGH CONFIDENCE (Trustworthy instruments)<br/>• Physical Explanation: Correlated sensors confirm real physical violation<br/>• <b>Action: TRIGGER IMMEDIATE PLANT ALARM & EMERGENCY INTERVENTION!</b>"]
+
+    TEST_REL_HIGH -- "No: mean_i r_i < theta_rel" --> CASE_D["<b>CASE D: SYSTEM ANOMALY + SENSOR DEGRADATION</b><br/>• System State: ANOMALOUS (Unsafe process)<br/>• Sensor Array: MULTI-CHANNEL SENSOR IMPAIRMENT<br/>• Threat Level: HIGHEST OPERATIONAL RISK (Potential sensor tampering attack)<br/>• <b>Action: CRITICAL EMERGENCY ALERT + FAIL-SAFE PROTOCOL TRIGGERED!</b>"]
+
+    style START fill:#f8f9fa,stroke:#343a40,stroke-width:2px
+    style CASE_A fill:#d3f9d8,stroke:#2b8a3e,stroke-width:3px
+    style CASE_B fill:#e7f5ff,stroke:#1c7ed6,stroke-width:3px
+    style CASE_C fill:#ffe3e3,stroke:#c92a2a,stroke-width:3px
+    style CASE_D fill:#ffe8cc,stroke:#d9480f,stroke-width:3px

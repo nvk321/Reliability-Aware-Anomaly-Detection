@@ -1,0 +1,40 @@
+graph TD
+    subgraph LIT["1. LITERATURE AUDIT (1998–2025)"]
+        L1["Statistical & ML: Isolation Forest, DPCA, OCSVM"]
+        L2["Deep Temporal: LSTM-AE, OmniAnomaly, USAD, TranAD"]
+        L3["Spatio-Temporal & Graph: GDN, MTAD-GAT, ST-GCN"]
+        L4["Causal Representation: CAROTS (ICML 2025)"]
+        L5["Control Systems FDI: Analytical Redundancy, Parity Space"]
+    end
+
+    subgraph LIMIT["2. IDENTIFIED RESEARCH GAP"]
+        G1["Conflation of observation faults with process anomalies"]
+        G2["Absence of continuous channel-level trust scores r_i(t) in [0, 1]"]
+        G3["Unweighted error sums cause false emergency shutdowns under noise/drift"]
+        G4["Binary anomaly flags lack operational diagnostic discrimination"]
+        G5["Benchmark disconnect: SWaT/WADI lack separate sensor fault ground truth"]
+    end
+
+    subgraph PROP["3. PROPOSED METHODOLOGICAL FRAMEWORK (R-STNet)"]
+        P1["Spatio-Temporal Graph Backbone: Dilated TCN + Graph Attention"]
+        P2["Sensor Reliability Module (SRM): Triangulates Volatility + Graph Consensus + Tail Z-Score"]
+        P3["Reliability-Weighted Aggregation: S_sys(t) = sum(r_i * z_i) / sum(r_i)"]
+        P4["Four-Way Discrimination Engine: Case A (Normal), Case B (Fault), Case C (Attack), Case D (Both)"]
+    end
+
+    subgraph EVAL["4. PLANNED EXPERIMENTAL EVALUATION (PHASE 2)"]
+        E1["Controlled Sensor Corruption Matrix: 9 Operational Failure Modes across 4 Severity Tiers"]
+        E2["Multi-Seed Deterministic Runs: Seeds 42, 101, 2024"]
+        E3["Fair Baseline Comparison: Isolation Forest, ST-AE, RSTNet (No SRM), CAROTS"]
+        E4["Rigorous Metrics: Raw Point-wise F1, Precision, Recall, PR-AUC, FPR, FASR, Sensor F1"]
+        E5["Validation-Calibrated Thresholding: Zero test-label leakage"]
+    end
+
+    LIT --> LIMIT
+    LIMIT --> PROP
+    PROP --> EVAL
+
+    style LIT fill:#e7f5ff,stroke:#1971c2,stroke-width:2px
+    style LIMIT fill:#ffe3e3,stroke:#c92a2a,stroke-width:2px
+    style PROP fill:#ebfbee,stroke:#2f9e44,stroke-width:2px
+    style EVAL fill:#fff4e6,stroke:#d9480f,stroke-width:2px

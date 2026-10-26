@@ -1,0 +1,71 @@
+flowchart TD
+    subgraph DATA_SOURCE["1. Source Evaluation Data (SWaT Test Split)"]
+        TEST_CLEAN["Chronological Mixed Attack Sequence<br/>44,992 Samples (10x Downsample)<br/>12.14% Cyber-Physical Attack Density"]
+    end
+
+    subgraph CORRUPTOR["2. Controlled Sensor Corruption Suite (src/corruption/corruptor.py)"]
+        E1["E1: Clean Benchmark (0% Synthetic Corruption)"]
+        E2["E2–E4: Gaussian Noise (Low=0.1, Med=0.3, High=0.5 std)"]
+        E5["E5: Single Stuck Sensor (LIT101 Tank Level Frozen)"]
+        E6["E6: Multi Stuck Sensors (3 Stages Frozen Simultaneously)"]
+        E7["E7–E8: Sensor Calibration Drift (Incipient 0.1 to Severe 0.5 slope)"]
+        E9["E9: Impulse Spikes (Random 2% Spikes, 3x Amplitude)"]
+        E10["E10: Mixed Harsh Environment (Noise + Drift + Stuck + Spikes)"]
+        
+        TEST_CLEAN --> E1
+        TEST_CLEAN --> E2
+        TEST_CLEAN --> E5
+        TEST_CLEAN --> E6
+        TEST_CLEAN --> E7
+        TEST_CLEAN --> E9
+        TEST_CLEAN --> E10
+    end
+
+    subgraph GT_MASKS["3. Dual Ground-Truth Generation"]
+        GT_SYS["System Anomaly Ground Truth:<br/>y_sys(t) in {0, 1} (From official SWaT attack labels)"]
+        GT_SENSOR["Sensor Fault Ground Truth Mask:<br/>M_fault(t, i) in {0, 1} (From synthetic corruption generator)"]
+        E1 --> GT_SYS
+        E2 --> GT_SENSOR
+        E5 --> GT_SENSOR
+        E6 --> GT_SENSOR
+        E7 --> GT_SENSOR
+        E9 --> GT_SENSOR
+        E10 --> GT_SENSOR
+    end
+
+    subgraph MODELS["4. Comparative Evaluation Models"]
+        M1["Baseline A: Isolation Forest (Liu et al., 2008)"]
+        M2["Baseline B: SpatioTemporal Autoencoder (ST-AE)"]
+        M3["Baseline C: RSTNet WITHOUT SRM (Primary Ablation)"]
+        M4["Baseline 3: CAROTS (Kim et al., ICML 2025 Reference)"]
+        M5["Proposed: R-STNet WITH SRM (Triangulated Reliability)"]
+        
+        CORRUPTOR --> M1
+        CORRUPTOR --> M2
+        CORRUPTOR --> M3
+        CORRUPTOR --> M4
+        CORRUPTOR --> M5
+    end
+
+    subgraph EVAL["5. Dual-Perspective Evaluation Framework"]
+        MET_SYS["System Detection Performance Metrics:<br/>• Point-wise Precision, Recall, F1-Score<br/>• Precision-Recall AUC (PR-AUC)<br/>• False Positive Rate on Normal Periods (FPR)"]
+        MET_ROB["Robustness & Reliability Metrics:<br/>• False Alarm Suppression Rate (FASR)<br/>• Reliability Separation (Delta r = r_clean - r_corrupted)<br/>• Sensor Fault Localization Precision, Recall, F1"]
+        MET_CAL["Strict Protocol:<br/>• Thresholds calibrated on normal validation split<br/>• Tested across 3 deterministic seeds: 42, 101, 2024"]
+
+        M1 --> MET_SYS
+        M2 --> MET_SYS
+        M3 --> MET_SYS
+        M4 --> MET_SYS
+        M5 --> MET_SYS
+
+        M3 --> MET_ROB
+        M5 --> MET_ROB
+        GT_SYS --> MET_SYS
+        GT_SENSOR --> MET_ROB
+    end
+
+    style DATA_SOURCE fill:#f8f9fa,stroke:#495057,stroke-width:2px
+    style CORRUPTOR fill:#fff4e6,stroke:#f76707,stroke-width:2px
+    style GT_MASKS fill:#e7f5ff,stroke:#1c7ed6,stroke-width:2px
+    style MODELS fill:#f3f0ff,stroke:#7048e8,stroke-width:2px
+    style EVAL fill:#ebfbee,stroke:#2b8a3e,stroke-width:2px

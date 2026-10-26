@@ -1,0 +1,14 @@
+{
+  "python_version": "3.11.0 (main, Oct 24 2022, 18:26:48) [MSC v.1933 64 bit (AMD64)]",
+  "torch_version": "2.5.1+cu121",
+  "cuda_available": true,
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "total_vram_mb": 4095.5,
+  "sample_train_loss": 1.002032995223999,
+  "sample_train_latency_ms": 583.4202766418457,
+  "measured_allocated_mb": 16.60205078125,
+  "measured_reserved_mb": 86.0,
+  "peak_vram_allocated_mb": 73.8125,
+  "status": "PASSED"
+}

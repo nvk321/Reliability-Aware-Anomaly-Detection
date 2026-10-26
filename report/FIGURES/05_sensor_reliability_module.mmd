@@ -1,0 +1,57 @@
+flowchart TD
+    subgraph INPUTS["Input Signals to SRM for Sensor i at Time t"]
+        WIN["Sliding Window History: x_i(t - L + 1 : t)"]
+        OBS["Current Observation: x_i(t)"]
+        PRED["Model Forecast / Reconstruction: x_hat_i(t)"]
+        NEIGH["Correlated Physical Neighbors: {x_j(t) | j in N(i)} with Adjacency A_ji"]
+        CALIB["Validation Calibration Baselines:<br/>• Maximum Normal Delta: delta_max,i<br/>• Median Residual: Med_i<br/>• Residual Deviation: MAD_i"]
+    end
+
+    subgraph SIG_V["Signal 1: Temporal Continuity v_i(t) in [0, 1]"]
+        RATE["Rate-of-Change Violation Check:<br/>Delta x_i(t) = |x_i(t) - x_i(t - 1)|<br/>Ratio = Delta x_i(t) / delta_max,i<br/>rate_score = exp( -0.5 * max(0, Ratio - 1)^2 )"]
+        STUCK["Stuck-Sensor Variance Check:<br/>recent_var = Var(x_i(t - K : t))<br/>stuck_penalty = 0.1 if (recent_var < eps_stuck and dynamic_sensor) else 1.0"]
+        V_OUT["Composite Temporal Score:<br/>v_i(t) = clip(rate_score * stuck_penalty, 0.01, 0.99)"]
+        
+        WIN --> RATE
+        CALIB --> RATE
+        WIN --> STUCK
+        RATE --> V_OUT
+        STUCK --> V_OUT
+    end
+
+    subgraph SIG_C["Signal 2: Neighborhood Consistency c_i(t) in [0, 1]"]
+        N_PRED["Expected Value from Physical Neighbors:<br/>x_hat_i^N(t) = sum_j ( W_ji * x_j(t) )<br/>where W_ji is column-normalized adjacency"]
+        N_DEV["Physical Discrepancy:<br/>dev_i = |x_i(t) - x_hat_i^N(t)|<br/>scaled_dev = dev_i / (2.5 * MAD_i)"]
+        C_OUT["Neighborhood Agreement Score:<br/>c_i(t) = clip(exp(-scaled_dev), 0.01, 0.99)"]
+
+        OBS --> N_DEV
+        NEIGH --> N_PRED --> N_DEV
+        CALIB --> N_DEV --> C_OUT
+    end
+
+    subgraph SIG_P["Signal 3: Standardized Residual Tail Confidence p_i(t) in [0, 1]"]
+        RES["Raw Error: e_i(t) = |x_i(t) - x_hat_i(t)|"]
+        Z_SCORE["MAD Z-Score: z_i(t) = (e_i(t) - Med_i) / (MAD_i + eps)"]
+        P_OUT["Tail Probability Function:<br/>p_i(t) = clip(exp( -0.5 * (max(0, z_i) / 2.0)^2 ), 0.01, 0.99)"]
+
+        OBS --> RES
+        PRED --> RES --> Z_SCORE
+        CALIB --> Z_SCORE --> P_OUT
+    end
+
+    subgraph FUSION["Calibrated Evidential / Logit Fusion"]
+        LOGIT["Logit Transformations:<br/>logit(s) = ln( s / (1 - s) ) for s in {v_i, c_i, p_i}"]
+        SUM["Weighted Evidential Sum:<br/>logit_fusion = w_v * logit(v_i) + w_c * logit(c_i) + w_p * logit(p_i) + b_r<br/>(Weights calibrated on validation normal splits)"]
+        SIGMOID["Sigmoidal Mapping into Unit Interval:<br/><b>r_i(t) = 1 / (1 + exp(-logit_fusion))</b>"]
+        FINAL_R["Channel Trustworthiness Score: r_i(t) in [0, 1]<br/>• r_i ~ 1.0: Sensor is verified healthy and physically consistent<br/>• r_i ~ 0.0: Sensor exhibits noise, drift, spikes, or stuck behavior"]
+
+        V_OUT --> LOGIT
+        C_OUT --> LOGIT
+        P_OUT --> LOGIT --> SUM --> SIGMOID --> FINAL_R
+    end
+
+    style INPUTS fill:#f8f9fa,stroke:#495057,stroke-width:2px
+    style SIG_V fill:#e7f5ff,stroke:#1971c2,stroke-width:2px
+    style SIG_C fill:#f3f0ff,stroke:#6741d9,stroke-width:2px
+    style SIG_P fill:#fff4e6,stroke:#e8590c,stroke-width:2px
+    style FUSION fill:#ebfbee,stroke:#2b8a3e,stroke-width:2px

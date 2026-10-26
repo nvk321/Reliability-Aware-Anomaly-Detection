@@ -1,0 +1,47 @@
+flowchart TD
+    subgraph D_INGEST["1. Data Ingestion & Chronological Split"]
+        RAW["Raw SWaT Telemetry (reference/swat_data/)<br/>• Normal Run: 496,800 rows (1 Hz)<br/>• Attack Run: 449,919 rows (12.14% Attacks)"]
+        DOWNSAMPLE["Chronological Downsampling (Factor 10x or 5x)<br/>• Preserves physical inertia & hydraulic time constants"]
+        SPLIT["Leak-Free Chronological Partitioning<br/>• Train (80% Normal): 39,744 samples (y = 0)<br/>• Val (20% Normal): 9,936 samples (y = 0)<br/>• Test (Mixed Attack): 44,992 samples (y in {0, 1})"]
+        RAW --> DOWNSAMPLE --> SPLIT
+    end
+
+    subgraph PREPROC["2. Preprocessing & Windowing"]
+        SCALER["Robust Standard Scaling<br/>Fit STRICTLY on Train split; Transform Val & Test"]
+        WINDOW["Sliding Window Generator<br/>W_t = [X(t - L + 1), ..., X(t)] in R^(L x M)<br/>(L = 30 to 60 steps)"]
+        SPLIT --> SCALER --> WINDOW
+    end
+
+    subgraph BACKBONE["3. Spatio-Temporal Representation Backbone"]
+        TCN["Temporal Feature Extractor<br/>Dilated 1D Convolutions per channel + Residual Skip<br/>H_temp in R^(B x M x d)"]
+        GAT["Inter-Sensor Graph Attention Network<br/>Learnable node embeddings E_1, E_2<br/>Top-K directed adjacency A_ij + Softmax message passing<br/>H_spat in R^(B x M x d)"]
+        HEAD["Forecasting Head<br/>Joint projection: [H_temp || H_spat] -> X_hat(t) in R^M"]
+        WINDOW --> TCN --> GAT --> HEAD
+    end
+
+    subgraph SRM_LAYER["4. Sensor Reliability Module (SRM)"]
+        RESID["Normalized Residual Calculation<br/>z_i(t) = |x_i(t) - x_hat_i(t)| / (MAD_i + eps)"]
+        TRIANG["Three-Signal Triangulated Reliability Evaluation:<br/>1. Temporal Continuity v_i(t)<br/>2. Graph Neighbor Consensus c_i(t)<br/>3. Tail Confidence p_i(t)"]
+        FUSION["Calibrated Logit / Evidential Fusion<br/>r_i(t) in [0, 1]^M for all channels i in {1..M}"]
+        HEAD --> RESID
+        WINDOW --> TRIANG
+        RESID --> TRIANG --> FUSION
+    end
+
+    subgraph DECISION["5. Reliability-Aware Decision & Diagnostics"]
+        SYS_SCORE["Reliability-Weighted System Score<br/>S_sys(t) = sum(r_i * z_i) / (sum(r_i) + eps)"]
+        FAULT_SCORE["Sensor Fault Localization Score<br/>S_fault(t) = max_i [ (1 - r_i) * z_i ]"]
+        FOUR_WAY["Four-Way Operational State Classifier<br/>• Case A: Normal Operation<br/>• Case B: Isolated Sensor Fault (Suppress Shutdown)<br/>• Case C: Genuine Cyber-Physical Attack<br/>• Case D: Attack with Concurrent Degradation"]
+        FUSION --> SYS_SCORE
+        FUSION --> FAULT_SCORE
+        RESID --> SYS_SCORE
+        RESID --> FAULT_SCORE
+        SYS_SCORE --> FOUR_WAY
+        FAULT_SCORE --> FOUR_WAY
+    end
+
+    style D_INGEST fill:#f1f3f5,stroke:#adb5bd,stroke-width:2px
+    style PREPROC fill:#e7f5ff,stroke:#339af0,stroke-width:2px
+    style BACKBONE fill:#f3f0ff,stroke:#845ef7,stroke-width:2px
+    style SRM_LAYER fill:#ebfbee,stroke:#37b24d,stroke-width:2px
+    style DECISION fill:#fff9db,stroke:#f59f00,stroke-width:2px

@@ -1,0 +1,75 @@
+{
+  "model": "Baseline_B_SpatioTemporalAE",
+  "model_type": "stae",
+  "dataset": "SWaT_A1_A2_Dec2015",
+  "downsample_rate": 10,
+  "window_size": 30,
+  "epochs": 15,
+  "batch_size": 64,
+  "learning_rate": 0.001,
+  "seed": 42,
+  "parameter_count": 170643,
+  "computational_cost": {
+    "training_time_sec": 112.35430340000312,
+    "inference_latency_ms_per_window": 0.07611249694168264,
+    "peak_allocated_vram_mb": 108.48828125,
+    "peak_reserved_vram_mb": 198.0,
+    "device": "cuda",
+    "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU"
+  },
+  "split_sizes": {
+    "train_windows": 39715,
+    "train_anomalies": 0,
+    "val_windows": 9907,
+    "val_anomalies": 0,
+    "test_windows": 44963,
+    "test_anomalies": 5468,
+    "test_attack_rate": 0.12161110246202433
+  },
+  "threshold_calibration": {
+    "method": "validation_quantile",
+    "val_quantile": 0.95,
+    "calibrated_threshold_tau": 0.08921968191862106,
+    "val_scores_mean": 0.03629586473107338,
+    "val_scores_std": 0.16149282455444336
+  },
+  "training_convergence": {
+    "initial_loss": 0.2202951260030187,
+    "final_loss": 0.04062214485018691,
+    "epoch_losses": [
+      0.2202951260030187,
+      0.11136909853795997,
+      0.08288946883359215,
+      0.07305612979417152,
+      0.06547861743521874,
+      0.05926111182586028,
+      0.05672626370175065,
+      0.05377551602969073,
+      0.05132965448407552,
+      0.04791633596006665,
+      0.04782052331904343,
+      0.047196246520947345,
+      0.04256800165976548,
+      0.04146388160946776,
+      0.04062214485018691
+    ]
+  },
+  "raw_pointwise_metrics": {
+    "precision": 0.12161110246202433,
+    "recall": 1.0,
+    "f1": 0.21685074656461303,
+    "pr_auc": 0.13036454814776485,
+    "roc_auc": 0.506968069722233,
+    "fpr": 1.0,
+    "tp": 5468,
+    "fp": 39495,
+    "tn": 0,
+    "fn": 0
+  },
+  "labeled_point_adjusted_metrics": {
+    "precision_pa": 0.12161110246202433,
+    "recall_pa": 1.0,
+    "f1_pa": 0.21685074656461303
+  },
+  "checkpoint_path": "results/checkpoints\\baseline_stae_swat.pt"
+}
