@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this research codebase or proposed R-STNet architecture, please cite it as below."
+title: "Reliability-Aware Anomaly Detection for Multivariate Sensor Data"
+version: 1.0.0
+doi: 10.5281/zenodo.1234567
+date-released: 2026-10-23
+authors:
+  - family-names: "Kushal"
+    given-names: "P Naga Venkata"
+    affiliation: "Vellore Institute of Technology"
+  - family-names: "Tarun"
+    given-names: "Koteru"
+    affiliation: "Vellore Institute of Technology"
+keywords:
+  - "multivariate time series"
+  - "anomaly detection"
+  - "sensor reliability"
+  - "spatio-temporal neural networks"
+  - "cyber-physical systems"
+  - "false alarm suppression"
+  - "SWaT testbed"
+license: MIT
+repository-code: "https://github.com/kushal-23bds0133/Reliability-Aware-Anomaly-Detection"

@@ -1,0 +1,42 @@
+# SWaT Experiment Configuration for Proposed R-STNet
+dataset:
+  name: "SWaT"
+  raw_dir: "reference/swat_data"
+  processed_dir: "data/processed/SWaT"
+  corrupted_dir: "data/corrupted/SWaT"
+  in_channels: 51
+  downsample_rate: 5
+  window_size: 60
+  train_stride: 1
+  test_stride: 1
+  train_ratio: 0.80
+  normalize: "standard"
+
+model:
+  name: "R-STNet"
+  in_channels: 51
+  hidden_dim: 64
+  temporal_kernel_size: 3
+  temporal_layers: 3
+  graph_topk: 15
+  dropout: 0.2
+
+training:
+  seed: 42
+  batch_size: 64
+  epochs: 30
+  lr: 0.0005
+  weight_decay: 0.0001
+  patience: 7
+  device: "cuda"
+
+reliability:
+  volatility_weight: 1.0
+  graph_weight: 1.5
+  residual_weight: 1.2
+  bias: 0.0
+  stuck_var_threshold: 1e-4
+
+decision:
+  system_anomaly_quantile: 0.99
+  sensor_reliability_threshold: 0.60

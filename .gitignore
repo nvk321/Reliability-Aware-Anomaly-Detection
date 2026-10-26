@@ -1,0 +1,74 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter & Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Datasets (Strictly exclude raw, processed, and synthetic corrupted data)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/corrupted/*
+!data/corrupted/.gitkeep
+
+# Machine Learning Checkpoints and Large Binaries (Whitelist lightweight release checkpoints < 1MB)
+*.pth
+*.ckpt
+*.onnx
+*.bin
+*.h5
+*.npy
+*.npz
+models/checkpoints/*
+!models/checkpoints/.gitkeep
+results/checkpoints/*
+!results/checkpoints/.gitkeep
+!results/checkpoints/*.pt
+
+# Evaluation plots and large cache (keep metrics JSONs)
+results/plots/*.png
+results/plots/*.pdf
+results/plots/*.svg
+
+# Reference large zips and data binaries
+reference/zips/*.zip
+reference/swat_data/*.csv
+reference/wadi_data/*.csv
+reference/
+

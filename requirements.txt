@@ -1,0 +1,30 @@
+# Core Numerical and Scientific Computing
+numpy>=1.24.3
+pandas>=2.0.0
+scipy>=1.11.0
+scikit-learn>=1.3.0
+
+# Deep Learning Framework
+# Note: For GPU acceleration on Windows with NVIDIA CUDA:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+torch>=2.1.0
+
+# Interactive Demo & Visualization
+streamlit>=1.30.0
+pyarrow>=10.0.0
+matplotlib>=3.7.2
+seaborn>=0.12.2
+
+# Configuration and Progress
+pyyaml>=6.0.1
+tqdm>=4.66.0
+
+# File Formats and Reference Data
+openpyxl>=3.1.2
+
+# Testing and Code Quality
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Baseline Explainability Comparison
+shap>=0.42.0

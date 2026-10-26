@@ -1,0 +1,22 @@
+# Base Project Configuration
+project:
+  name: "Reliability-Aware-Anomaly-Detection"
+  version: "0.1.0"
+  seed: 42
+  log_level: "INFO"
+
+hardware:
+  device: "cuda" # fallback to "cpu" if cuda unavailable
+  max_vram_gb: 3.5
+  num_workers: 0 # Windows multiprocessing safety
+
+evaluation:
+  metrics:
+    - "precision"
+    - "recall"
+    - "f1"
+    - "pr_auc"
+    - "fpr"
+    - "sensor_fault_accuracy"
+  save_plots: true
+  save_json: true
