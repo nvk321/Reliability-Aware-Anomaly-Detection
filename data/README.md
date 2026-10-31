@@ -46,7 +46,7 @@ data/
 Once raw CSV files are placed in `data/raw/`, execute:
 
 ```bash
-python scripts/prepare_data.py --config configs/swat.yaml
+python scripts/prepare_data.py --config configs/swat_rstnet.yaml
 ```
 
 This performs:

@@ -55,8 +55,6 @@ data/corrupted/*
 *.h5
 *.npy
 *.npz
-models/checkpoints/*
-!models/checkpoints/.gitkeep
 results/checkpoints/*
 !results/checkpoints/.gitkeep
 !results/checkpoints/*.pt

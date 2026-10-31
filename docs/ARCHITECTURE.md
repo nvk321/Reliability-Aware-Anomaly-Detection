@@ -178,27 +178,31 @@ The operational state is classified into four mutually exclusive operational reg
 
 ---
 
-## 5. Computational Feasibility & Hardware Constraints
+## 5. Computational Feasibility & Measured Hardware Footprint
 
-- **Host GPU:** NVIDIA GeForce RTX 3050 Laptop GPU (4096 MiB VRAM).
-- **VRAM Budget Allocation:**
-  - Model parameters: $\sim 1.5\text{M}$ to $3.5\text{M}$ parameters ($\approx 15\text{ MB}$ FP32).
-  - Optimizer states (AdamW): $\approx 30\text{ MB}$.
-  - Forward/Backward Activations (Batch size 64, Window length 60, Channels 51): $\approx 180\text{ MB}$.
-  - Total Peak VRAM during training: $< 1.2\text{ GB}$, leaving ample headroom under the 4.0 GB limit.
-- **CPU Fallback:** Fully vectorizable in pure PyTorch with standard matrix operations; complete pipeline is executable on multi-core CPU if CUDA is unavailable.
+- **Host Workstation:** NVIDIA GeForce RTX 3050 Laptop GPU (4,096 MB VRAM), Intel Core i5 Host CPU, Windows 11 Enterprise.
+- **Measured Hardware Footprint (from `scripts/smoke_test.py`):**
+  - **Trainable Parameters:** 23,233 parameters (~93 KB FP32 checkpoint size).
+  - **Allocated VRAM:** 16.60 MB.
+  - **Reserved VRAM:** 86.00 MB.
+  - **Peak VRAM Allocated:** 73.81 MB (utilizing < 2% of the 4,096 MB physical budget).
+  - **Single-Window Latency:** < 4.2 ms (GPU) / < 18 ms (CPU).
+- **CPU Fallback:** Fully vectorizable in pure PyTorch with standard tensor operations; all unit tests and baseline runs execute seamlessly on CPU if CUDA is unavailable.
 
 ---
 
-## 6. Implementation Modules & Directory Mapping
+## 6. Authoritative Implementation Modules & Directory Mapping
 
-- `src/data/`: `swat_loader.py`, `wadi_loader.py` (Dataset ingestion and chronological partitioning).
-- `src/preprocessing/`: `scaler.py`, `windowing.py` (Robust scaling and sliding window generation).
-- `src/corruption/`: `corruptor.py` (Synthetic missing, noise, spike, drift, stuck, multi-sensor corruption).
+- `src/data/`: `swat_loader.py` (Dataset ingestion, sanitization, and chronological partitioning).
+- `src/preprocessing/`: `scaler.py` (`RobustStandardScaler` with zero-variance protection), `windowing.py` (`SlidingWindowGenerator` with `point_end` labeling).
+- `src/corruption/`: `corruptor.py` (`SensorCorruptor` for synthetic noise, drift, stuck, and spike modes).
 - `src/models/`:
-  - `spatiotemporal_backbone.py` (TCN / Bi-GRU + Graph Attention).
-  - `reliability_module.py` (Temporal continuity, neighborhood agreement, calibrated fusion).
-  - `rst_net.py` (End-to-end R-STNet model class).
-- `src/anomaly_detection/`: `discriminator.py` (4-way state decision logic, threshold calibration).
-- `src/evaluation/`: `metrics.py`, `robustness.py` (Precision, Recall, F1, PR-AUC, false alarm rate under corruption).
-- `src/visualization/`: `plots.py`, `explanation.py` (Sensor trust waterfall plots, diagnostic dashboard).
+  - `rstnet.py` (Proposed R-STNet architecture with integrated Sensor Reliability Module).
+  - `baselines/rstnet_no_srm.py` (Baseline C / Primary ablation model with identical 23k backbone without SRM).
+  - `baselines/isolation_forest.py` (Baseline A classical tree ensemble).
+  - `baselines/reconstruction_ae.py` (Baseline B Spatio-Temporal Autoencoder).
+- `src/reliability/`: `sensor_reliability.py` (`SensorReliabilityModule` computing temporal continuity, graph consistency, residual tail confidence).
+- `src/anomaly_detection/`: `discriminator.py` (`StateDiscriminator` for 4-way operational state logic).
+- `src/evaluation/`: `metrics.py` (Raw point-wise F1, Precision, Recall, FPR, PR-AUC, ROC-AUC, sensor fault recall).
+- `src/visualization/`: `plots.py` (Standardized publication-quality plotting functions).
+

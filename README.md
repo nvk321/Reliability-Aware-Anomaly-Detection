@@ -203,7 +203,7 @@ To reproduce all benchmarks, corruption experiments, and publication figures fro
 
 ```bash
 # Step 1: Preprocess raw SWaT data (if raw CSVs are available)
-python scripts/prepare_data.py --config configs/swat.yaml
+python scripts/prepare_data.py --config configs/swat_rstnet.yaml
 
 # Step 2: Train Deep Models (ST-AE, RSTNetNoSRM, R-STNet) (~135s each)
 python scripts/train_deep_model.py --model_type rstnet --epochs 15

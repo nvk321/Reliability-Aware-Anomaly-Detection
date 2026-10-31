@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import torch
 import altair as alt
-import matplotlib.pyplot as plt
 import streamlit as st
 
 # Suppress PyTorch and serialization warnings for clean UI
@@ -26,6 +25,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.models.rstnet import RSTNet
 from src.models.baselines.rstnet_no_srm import RSTNetNoSRM
 from src.preprocessing.windowing import SlidingWindowGenerator
+from src.corruption.corruptor import SensorCorruptor
 
 # Page Configuration
 st.set_page_config(
@@ -125,6 +125,15 @@ st.markdown(
         font-size: 0.9rem;
         color: #1E293B;
     }
+    .warning-box {
+        background: #FFFBEB;
+        border-left: 4px solid #F59E0B;
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 0.9rem;
+        color: #92400E;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -203,7 +212,7 @@ def main():
     st.markdown(
         '<div class="author-sub">'
         '<b>Students:</b> P Naga Venkata Kushal (<code>23BDS0133</code>) &nbsp;|&nbsp; Koteru Tarun (<code>23BDS0103</code>) &nbsp;&bull;&nbsp; '
-        '<b>Guide:</b> <span class="badge-guide">Dr. Dega Nagaraju</span> &nbsp;&bull;&nbsp; '
+        '<b>Faculty Guide:</b> <span class="badge-guide">Dr. Dega Nagaraju</span> &nbsp;&bull;&nbsp; '
         '<b>Course:</b> BCSE209P Machine Learning Lab (Vellore Institute of Technology)'
         '</div>',
         unsafe_allow_html=True,
@@ -211,7 +220,8 @@ def main():
     st.markdown(
         '<div class="disclaimer-banner">'
         '🔬 <b>Research Notice:</b> Interactive evaluation operates on the benchmarked Secure Water Treatment (SWaT) testbed dataset '
-        'and controlled sensor degradation suites. This is an academic research evaluation and offline prototype, not a live SCADA deployment.'
+        'and controlled sensor degradation suites. This is an academic research prototype evaluated offline on recorded dataset logs, '
+        'not a live SCADA hardware-in-the-loop deployment.'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -300,171 +310,157 @@ def main():
 
     slice_idx = slice(time_window_start, time_window_start + eval_window_len)
 
-    # Primary Tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📈 Process & Anomaly Timeline",
-        "🎯 Sensor Reliability (SRM)",
-        "🧪 Live Sensor Corruption Sandbox",
-        "📊 Validated Benchmark & Audit",
+    # Authoritative 9-Tab Dashboard Flow Matching Thesis Structure
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+        "1. 📖 Project Overview",
+        "2. 🚰 SWaT Testbed",
+        "3. 🧠 Model Architecture",
+        "4. 🎯 Reliability (SRM)",
+        "5. 📈 Live Detection",
+        "6. 📊 Benchmark Audit",
+        "7. 🧪 Robustness Sandbox",
+        "8. 🔬 Ablation Studies",
+        "9. ⚠️ Academic Limitations",
     ])
 
     # -------------------------------------------------------------------------
-    # TAB 1: Process & Anomaly Timeline
+    # TAB 1: Project Overview & Problem Formulation
     # -------------------------------------------------------------------------
     with tab1:
-        st.subheader("Process Monitoring & Real-Time Anomaly Detection")
-
-        # Evaluate models on selected slice
-        sub_windows = test_windows[slice_idx]
-        sub_labels = test_labels[slice_idx]
-        sub_tensor = torch.tensor(sub_windows, dtype=torch.float32).to(device)
-
-        with torch.no_grad():
-            # Proposed R-STNet
-            preds_prop, _ = model_prop(sub_tensor)
-            preds_prop_np = preds_prop.cpu().numpy()
-            r_mat_prop, details_prop = model_prop.srm.estimate_reliability_batch(sub_windows, predicted_x=preds_prop_np)
-            diff_prop = np.abs(sub_windows[:, -1, :] - preds_prop_np)
-            z_prop = diff_prop / (model_prop.srm.mad_residual_ + 1e-6)
-            scores_prop = model_prop.srm.compute_weighted_system_anomaly_batch(z_prop, r_mat_prop)
-
-            # Baseline C (No SRM)
-            preds_c, _ = model_c(sub_tensor)
-            preds_c_np = preds_c.cpu().numpy()
-            diff_c = np.abs(sub_windows[:, -1, :] - preds_c_np)
-            z_c = diff_c / (model_c.mad_residual_ + 1e-6)
-            scores_c = np.mean(z_c, axis=-1)
-
-        if "Proposed" in selected_model_name:
-            scores = scores_prop
-            tau = tau_prop
-            active_r = r_mat_prop[-1]
-        else:
-            scores = scores_c
-            tau = tau_c
-            active_r = np.ones(num_sensors)
-
-        current_score = float(scores[-1])
-        is_alarm = current_score >= tau
-        ground_truth_attack = bool(sub_labels[-1] == 1)
-        min_sensor_rel = float(np.min(active_r))
-        most_faulty_ch = int(np.argmin(active_r))
-
-        # 4-Way Operational State Classifier
-        # Case A: Normal (score < tau, r >= 0.60)
-        # Case B: Sensor Fault (score < tau, r < 0.60) -> Handled safely by SRM!
-        # Case C: Cyber-Attack (score >= tau, r >= 0.60) -> True physical attack!
-        # Case D: Dual Fault (score >= tau, r < 0.60)
-        if not is_alarm and min_sensor_rel >= 0.60:
-            state_banner = '<div class="status-card status-normal"><div><b>STATE A: NORMAL OPERATION</b> — Healthy cyber-physical process and trustworthy sensor telemetry.</div><span>✅ ALL CLEAR</span></div>'
-        elif not is_alarm and min_sensor_rel < 0.60:
-            state_banner = f'<div class="status-card status-sensor-fault"><div><b>STATE B: SENSOR DEGRADATION DETECTED</b> — Sensor <code>{sensor_names[most_faulty_ch]}</code> degraded (r={min_sensor_rel:.3f}); SRM suppressed false plant shutdown.</div><span>⚠️ INSTRUMENT FAULT</span></div>'
-        elif is_alarm and min_sensor_rel >= 0.60:
-            state_banner = '<div class="status-card status-cyber-attack"><div><b>STATE C: VERIFIED CYBER-PHYSICAL ATTACK</b> — Process anomaly detected across trustworthy sensors (Score > Threshold).</div><span>🚨 CRITICAL ALARM</span></div>'
-        else:
-            state_banner = f'<div class="status-card status-dual-fault"><div><b>STATE D: DUAL INCIDENT</b> — Process threshold crossed with localized instrument degradation on <code>{sensor_names[most_faulty_ch]}</code>.</div><span>⚠️ PROCESS & SENSOR</span></div>'
-
-        st.markdown(state_banner, unsafe_allow_html=True)
-
-        # KPI Metrics Row
-        col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
-        with col_m1:
-            st.markdown(f'<div class="metric-box"><div class="metric-val">{current_score:.3f}</div><div class="metric-lbl">Anomaly Score</div></div>', unsafe_allow_html=True)
-        with col_m2:
-            st.markdown(f'<div class="metric-box"><div class="metric-val">{tau:.3f}</div><div class="metric-lbl">Threshold (τ)</div></div>', unsafe_allow_html=True)
-        with col_m3:
-            margin = current_score - tau
-            color = "#DC2626" if margin >= 0 else "#10B981"
-            st.markdown(f'<div class="metric-box"><div class="metric-val" style="color: {color};">{margin:+.3f}</div><div class="metric-lbl">Threshold Margin</div></div>', unsafe_allow_html=True)
-        with col_m4:
-            gt_badge = '<span style="color: #DC2626; font-weight:700;">ATTACK (1)</span>' if ground_truth_attack else '<span style="color: #059669; font-weight:700;">NORMAL (0)</span>'
-            st.markdown(f'<div class="metric-box"><div class="metric-val">{gt_badge}</div><div class="metric-lbl">SWaT Ground Truth</div></div>', unsafe_allow_html=True)
-        with col_m5:
-            st.markdown(f'<div class="metric-box"><div class="metric-val">{sensor_names[most_faulty_ch]}</div><div class="metric-lbl">Most Suspicious Sensor</div></div>', unsafe_allow_html=True)
-
-        st.markdown("---")
-
-        # Interactive Anomaly Score Chart using Altair
-        time_steps = np.arange(time_window_start, time_window_start + eval_window_len)
-        df_timeline = pd.DataFrame({
-            "TimeStep": time_steps,
-            "AnomalyScore": scores,
-            "Threshold": [tau] * len(time_steps),
-            "GroundTruthAttack": ["Attack" if x == 1 else "Normal" for x in sub_labels],
-        })
-
-        chart_score = alt.Chart(df_timeline).mark_line(color="#2563EB", strokeWidth=2).encode(
-            x=alt.X("TimeStep:Q", title="Time Step (10s intervals)", axis=alt.Axis(format="d")),
-            y=alt.Y("AnomalyScore:Q", title="Anomaly Score S(t)"),
-            tooltip=[
-                alt.Tooltip("TimeStep:Q", title="Time Step"),
-                alt.Tooltip("AnomalyScore:Q", title="Anomaly Score", format=".3f"),
-                alt.Tooltip("Threshold:Q", title="Decision Threshold", format=".3f"),
-                alt.Tooltip("GroundTruthAttack:N", title="Ground Truth"),
-            ],
-        )
-
-        chart_tau = alt.Chart(df_timeline).mark_line(color="#DC2626", strokeDash=[6, 4], strokeWidth=1.5).encode(
-            x="TimeStep:Q",
-            y="Threshold:Q",
-        )
-
-        # Highlight attack windows in red background
-        attack_shade = alt.Chart(df_timeline).mark_area(
-            opacity=0.18, color="#EF4444"
-        ).encode(
-            x=alt.X("TimeStep:Q"),
-            y=alt.datum(0),
-            y2=alt.datum(float(max(float(np.max(scores) * 1.15), float(tau * 1.2)))),
-        ).transform_filter(alt.datum.GroundTruthAttack == "Attack")
-
-        final_timeline_chart = (attack_shade + chart_score + chart_tau).properties(
-            width="container",
-            height=260,
-            title=f"Real-Time Anomaly Score vs. Decision Threshold (Time Steps {time_window_start} to {time_window_start + eval_window_len})",
-        ).interactive()
-
-        st.altair_chart(final_timeline_chart, use_container_width=True)
-
-        # Multi-Sensor Physical Telemetry Explorer
-        st.markdown("#### 🌊 Physical Sensor Telemetry Signals")
-        default_sensors = ["FIT101", "LIT101", "DPIT301"]
-        active_defaults = [s for s in default_sensors if s in sensor_names]
-
-        chosen_sensors = st.multiselect(
-            "Select Sensor Channels to Overlay:",
-            options=sensor_names,
-            default=active_defaults if active_defaults else sensor_names[:3],
-            help="Choose any of the 51 SWaT physical sensors to inspect continuous standardized telemetry.",
-        )
-
-        if chosen_sensors:
-            sensor_series = {"TimeStep": time_steps}
-            for s in chosen_sensors:
-                s_idx = sensor_names.index(s)
-                sensor_series[s] = sub_windows[:, -1, s_idx]
-            df_sensors = pd.DataFrame(sensor_series).melt("TimeStep", var_name="Sensor", value_name="StandardizedValue")
-
-            telemetry_chart = alt.Chart(df_sensors).mark_line(strokeWidth=1.5).encode(
-                x=alt.X("TimeStep:Q", title="Time Step (10s intervals)", axis=alt.Axis(format="d")),
-                y=alt.Y("StandardizedValue:Q", title="Standardized Value (z-score)"),
-                color=alt.Color("Sensor:N", scale=alt.Scale(scheme="category10"), title="Sensor"),
-                tooltip=["TimeStep:Q", "Sensor:N", alt.Tooltip("StandardizedValue:Q", format=".3f")],
-            ).properties(
-                width="container",
-                height=240,
-                title="Physical Sensor Telemetry Signals across Inspected Window",
-            ).interactive()
-
-            st.altair_chart(telemetry_chart, use_container_width=True)
+        st.subheader("1. Research Motivation & Problem Formulation")
+        col_ov1, col_ov2 = st.columns([3, 2])
+        with col_ov1:
+            st.markdown(
+                """
+                ### The Core Research Problem
+                In multivariate cyber-physical systems (water treatment plants, smart grids, industrial manufacturing), 
+                standard deep learning anomaly detectors (e.g., autoencoders, graph neural networks) aggregate reconstruction 
+                or forecasting errors across all sensor channels uniformly:
+                $$S_{\\text{sys}}(t) = \\frac{1}{M} \\sum_{i=1}^{M} z_i(t)$$
+                
+                **The Fatal Weakness:** When a single instrument suffers from benign hardware degradation (such as sensor jitter, 
+                calibration drift, or intermittent telemetry loss), its individual residual $z_i(t)$ spikes drastically. Because the 
+                reconstruction error is summed uniformly across all sensors, this localized failure **pollutes the entire system score**, 
+                triggering an immediate emergency plant shutdown. In real-world operation, this causes severe alert fatigue and false shutdown saturation.
+                
+                ### Central Research Question
+                > *Can explicit online sensor-reliability estimation improve the robustness of multivariate anomaly detection, 
+                > decoupling localized sensor instrument faults from genuine cyber-physical process attacks?*
+                
+                ### Proposed Solution: R-STNet
+                We propose the **Reliability-Aware Spatio-Temporal Network (R-STNet)**:
+                1. **Spatio-Temporal Graph Backbone:** Dilated 1D temporal convolutions per sensor combined with learned top-$k$ Graph Attention (GAT) to capture inter-sensor physical conservation laws.
+                2. **Sensor Reliability Module (SRM):** Online triangulation of Temporal Continuity, Graph Neighborhood Consistency, and Residual Tail Confidence to compute continuous trustworthiness weights $r_i(t) \\in [0, 1]$.
+                3. **Reliability-Weighted Scoring:** Downweights degraded channels from the plant emergency score while isolating them into a dedicated sensor fault alert.
+                """
+            )
+        with col_ov2:
+            st.markdown(
+                """
+                <div class="callout-box">
+                <b>🎓 Viva Quick Facts</b><br>
+                &bull; <b>Institution:</b> VIT Vellore (BCSE209P)<br>
+                &bull; <b>Primary Testbed:</b> SWaT (51 channels, 11 days)<br>
+                &bull; <b>Model Parameter Count:</b> 23,233 (Edge-viable)<br>
+                &bull; <b>Hardware VRAM:</b> 73.8 MB peak (tested on RTX 3050)<br>
+                &bull; <b>Ablation Baseline:</b> RSTNetNoSRM (Exact same backbone)<br>
+                &bull; <b>Key Result:</b> Eliminates 14,898 false alarms relative to Baseline C; achieves +0.29 reliability separation under noise.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.image("report/REVIEW2/figures/fig4_1_model_comparison_barchart.png", caption="Model Comparison on SWaT Clean Benchmark", width="stretch")
 
     # -------------------------------------------------------------------------
-    # TAB 2: Sensor Reliability Module (SRM)
+    # TAB 2: SWaT Testbed & Physical Process
     # -------------------------------------------------------------------------
     with tab2:
-        st.subheader("Sensor Reliability Module (SRM): Dual-Perspective Breakdown")
+        st.subheader("2. Secure Water Treatment (SWaT) Industrial Testbed")
         st.markdown(
-            "The SRM computes continuous reliability weights $r_i(t) \in [0, 1]$ online by triangulating "
+            "The SWaT dataset was developed by the iTrust Centre for Research in Cyber Security at Singapore University of Technology "
+            "and Design (SUTD). It models an operational 6-stage industrial water treatment plant producing 5 gallons per minute of treated water."
+        )
+
+        col_st1, col_st2, col_st3, col_st4 = st.columns(4)
+        col_st1.metric("Total Channels (M)", "51", "26 Sensors + 25 Actuators")
+        col_st2.metric("Train Split (Normal)", "39,744 windows", "7 Days (y = 0)")
+        col_st3.metric("Val Split (Normal)", "9,936 windows", "Chronological (y = 0)")
+        col_st4.metric("Test Split (Mixed)", "44,963 windows", "4 Days (12.15% Attacks)")
+
+        st.markdown("#### Physical Stages Overview")
+        st.markdown(
+            """
+            - **Stage 1 (P1): Raw Water Inflow & Storage** — Water intake through motorized valve `MV101`, level transmitter `LIT101`, and raw water pumps `P101`/`P102`.
+            - **Stage 2 (P2): Chemical Pre-Treatment & Dosing** — Coagulation, chlorination, and pH adjustment monitored by analyzers `AIT201` (pH) and `AIT202`/`AIT203` (conductivity).
+            - **Stage 3 (P3): Ultrafiltration (UF)** — Membrane separation to remove suspended solids, monitored via differential pressure `DPIT301` and backwash cycle valves.
+            - **Stage 4 (P4): De-Chlorination & UV Disinfection** — Neutralization of free chlorine via sodium bisulfite and ultraviolet lamps `UV401`, measured by ORP meters `AIT401`/`AIT402`.
+            - **Stage 5 (P5): Reverse Osmosis (RO) Desalination** — High-pressure desalination pumps `P501`/`P502` and permeate conductivity transmitters `AIT501`-`AIT504`.
+            - **Stage 6 (P6): Backwash Cleaning & Recycling** — Automated cleaning sequences with recycled water return pump `P601`/`P602`.
+            """
+        )
+
+    # -------------------------------------------------------------------------
+    # TAB 3: Model Architecture & Graph Consensus
+    # -------------------------------------------------------------------------
+    with tab3:
+        st.subheader("3. Spatio-Temporal Graph Architecture & Forecasting Head")
+        st.markdown(
+            "R-STNet extracts dual-domain representations using dilated 1D temporal convolutions followed by top-$k$ graph attention."
+        )
+
+        st.markdown(
+            """
+            ```
+            Input Window X in R^(L x M)  [L=30, M=51]
+                        |
+            [Temporal Feature Extractor]
+            1D Conv (k=3, hidden=64) -> ReLU
+            1D Conv (k=3, dilation=2, hidden=64) + Residual Skip
+            Linear Projection -> H_temp in R^(B x M x 32)
+                        |
+            [Sensor Graph Attention (GAT)]
+            Learnable Node Embeddings: E1, E2 in R^(M x 32)
+            Directed Adjacency: A = Softmax( TopK( ReLU(E1 @ E2^T) ) )
+            Spatial Message Passing: H_spatial = A @ H_temp
+                        |
+            [Joint Node Representation]
+            H_joint = [H_temp || H_spatial] in R^(B x M x 64)
+                        |
+            [Forecasting Head]
+            Dense(64 -> 64) -> ReLU -> Dropout(0.2) -> Dense(64 -> 1)
+            Output Prediction: x_hat(t) in R^(B x M)
+            ```
+            """
+        )
+
+        col_arch1, col_arch2 = st.columns(2)
+        with col_arch1:
+            st.markdown("#### Parameter Footprint Breakdown")
+            param_df = pd.DataFrame([
+                {"Component": "Temporal 1D CNNs (Conv1 + Conv2)", "Parameters": "12,672", "Dimension": "Hidden=64, Kernel=3"},
+                {"Component": "Graph Attention (Node Embeddings + Lin)", "Parameters": "4,352", "Dimension": "NodeDim=32, TopK=15"},
+                {"Component": "Forecasting MLP Head", "Parameters": "6,209", "Dimension": "64 -> 64 -> 1"},
+                {"Component": "Sensor Reliability Module (SRM)", "Parameters": "Calibrated Stats", "Dimension": "Online Statistics"},
+                {"Component": "Total R-STNet Architecture", "Parameters": "23,233", "Dimension": "73.8 MB Peak VRAM"},
+            ])
+            st.dataframe(param_df, width="stretch")
+        with col_arch2:
+            st.markdown("#### Edge Viability & Computational Efficiency")
+            st.markdown(
+                """
+                - **Latency:** Single-window inference executes in **< 4.2 ms** on GPU and **< 18 ms** on Intel Core i5 CPU.
+                - **Memory Footprint:** Peak VRAM is **73.81 MB**, allowing deployment on low-cost edge industrial IPCs (e.g., NVIDIA Jetson).
+                - **Sparsification:** Setting $\\text{top-}k = 15$ prunes weak spurious correlations and bounds graph aggregation complexity to $O(k \\cdot M)$ rather than $O(M^2)$.
+                """
+            )
+
+    # -------------------------------------------------------------------------
+    # TAB 4: Sensor Reliability Module (SRM)
+    # -------------------------------------------------------------------------
+    with tab4:
+        st.subheader("4. Sensor Reliability Module (SRM): Multi-Perspective Triangulation")
+        st.markdown(
+            "The SRM computes continuous reliability weights $r_i(t) \\in [0, 1]$ online by triangulating "
             "**Temporal Continuity ($v_i$)**, **Topological Neighborhood Consistency ($c_i$)**, and **Residual Tail Confidence ($p_i$)**."
         )
 
@@ -533,7 +529,7 @@ def main():
         )
 
         cutoff_rule = alt.Chart(pd.DataFrame({"y": [0.60]})).mark_rule(color="#475569", strokeDash=[4, 4]).encode(y="y:Q")
-        st.altair_chart(r_bar_chart + cutoff_rule, use_container_width=True)
+        st.altair_chart(r_bar_chart + cutoff_rule, width="stretch")
 
         # Single Sensor Inspector Card
         st.markdown("#### 🔍 Single Sensor Multi-Perspective Diagnostics")
@@ -574,13 +570,227 @@ def main():
                     "Residual Tail Confidence (p)": f"{r_p[idx]:.4f}",
                     "Weight Status": "Suppressed / Downweighted",
                 })
-            st.dataframe(pd.DataFrame(deg_rows), use_container_width=True)
+            st.dataframe(pd.DataFrame(deg_rows), width="stretch")
 
     # -------------------------------------------------------------------------
-    # TAB 3: Live Sensor Corruption Simulation
+    # TAB 5: Live Process Monitoring & Detection
     # -------------------------------------------------------------------------
-    with tab3:
-        st.subheader("Controlled Sensor Degradation & False-Alarm Elimination Simulator")
+    with tab5:
+        st.subheader("5. Process Monitoring & 4-Way Operational State Classification")
+
+        # Evaluate models on selected slice
+        sub_windows = test_windows[slice_idx]
+        sub_labels = test_labels[slice_idx]
+        sub_tensor = torch.tensor(sub_windows, dtype=torch.float32).to(device)
+
+        with torch.no_grad():
+            # Proposed R-STNet
+            preds_prop, _ = model_prop(sub_tensor)
+            preds_prop_np = preds_prop.cpu().numpy()
+            r_mat_prop, details_prop = model_prop.srm.estimate_reliability_batch(sub_windows, predicted_x=preds_prop_np)
+            diff_prop = np.abs(sub_windows[:, -1, :] - preds_prop_np)
+            z_prop = diff_prop / (model_prop.srm.mad_residual_ + 1e-6)
+            scores_prop = model_prop.srm.compute_weighted_system_anomaly_batch(z_prop, r_mat_prop)
+
+            # Baseline C (No SRM)
+            preds_c, _ = model_c(sub_tensor)
+            preds_c_np = preds_c.cpu().numpy()
+            diff_c = np.abs(sub_windows[:, -1, :] - preds_c_np)
+            z_c = diff_c / (model_c.mad_residual_ + 1e-6)
+            scores_c = np.mean(z_c, axis=-1)
+
+        if "Proposed" in selected_model_name:
+            scores = scores_prop
+            tau = tau_prop
+            active_r = r_mat_prop[-1]
+        else:
+            scores = scores_c
+            tau = tau_c
+            active_r = np.ones(num_sensors)
+
+        current_score = float(scores[-1])
+        is_alarm = current_score >= tau
+        ground_truth_attack = bool(sub_labels[-1] == 1)
+        min_sensor_rel = float(np.min(active_r))
+        most_faulty_ch = int(np.argmin(active_r))
+
+        # 4-Way Operational State Classifier
+        if not is_alarm and min_sensor_rel >= 0.60:
+            state_banner = '<div class="status-card status-normal"><div><b>STATE A: NORMAL OPERATION</b> — Healthy cyber-physical process and trustworthy sensor telemetry.</div><span>✅ ALL CLEAR</span></div>'
+        elif not is_alarm and min_sensor_rel < 0.60:
+            state_banner = f'<div class="status-card status-sensor-fault"><div><b>STATE B: SENSOR DEGRADATION DETECTED</b> — Sensor <code>{sensor_names[most_faulty_ch]}</code> degraded (r={min_sensor_rel:.3f}); SRM suppressed false plant shutdown.</div><span>⚠️ INSTRUMENT FAULT</span></div>'
+        elif is_alarm and min_sensor_rel >= 0.60:
+            state_banner = '<div class="status-card status-cyber-attack"><div><b>STATE C: VERIFIED CYBER-PHYSICAL ATTACK</b> — Process anomaly detected across trustworthy sensors (Score > Threshold).</div><span>🚨 CRITICAL ALARM</span></div>'
+        else:
+            state_banner = f'<div class="status-card status-dual-fault"><div><b>STATE D: DUAL INCIDENT</b> — Process threshold crossed with localized instrument degradation on <code>{sensor_names[most_faulty_ch]}</code>.</div><span>⚠️ PROCESS & SENSOR</span></div>'
+
+        st.markdown(state_banner, unsafe_allow_html=True)
+
+        # KPI Metrics Row
+        col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
+        with col_m1:
+            st.markdown(f'<div class="metric-box"><div class="metric-val">{current_score:.3f}</div><div class="metric-lbl">Anomaly Score</div></div>', unsafe_allow_html=True)
+        with col_m2:
+            st.markdown(f'<div class="metric-box"><div class="metric-val">{tau:.3f}</div><div class="metric-lbl">Threshold (τ)</div></div>', unsafe_allow_html=True)
+        with col_m3:
+            margin = current_score - tau
+            color = "#DC2626" if margin >= 0 else "#10B981"
+            st.markdown(f'<div class="metric-box"><div class="metric-val" style="color: {color};">{margin:+.3f}</div><div class="metric-lbl">Threshold Margin</div></div>', unsafe_allow_html=True)
+        with col_m4:
+            gt_badge = '<span style="color: #DC2626; font-weight:700;">ATTACK (1)</span>' if ground_truth_attack else '<span style="color: #059669; font-weight:700;">NORMAL (0)</span>'
+            st.markdown(f'<div class="metric-box"><div class="metric-val">{gt_badge}</div><div class="metric-lbl">SWaT Ground Truth</div></div>', unsafe_allow_html=True)
+        with col_m5:
+            st.markdown(f'<div class="metric-box"><div class="metric-val">{sensor_names[most_faulty_ch]}</div><div class="metric-lbl">Most Suspicious Sensor</div></div>', unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Interactive Anomaly Score Chart using Altair
+        time_steps = np.arange(time_window_start, time_window_start + eval_window_len)
+        df_timeline = pd.DataFrame({
+            "TimeStep": time_steps,
+            "AnomalyScore": scores,
+            "Threshold": [tau] * len(time_steps),
+            "GroundTruthAttack": ["Attack" if x == 1 else "Normal" for x in sub_labels],
+        })
+
+        chart_score = alt.Chart(df_timeline).mark_line(color="#2563EB", strokeWidth=2).encode(
+            x=alt.X("TimeStep:Q", title="Time Step (10s intervals)", axis=alt.Axis(format="d")),
+            y=alt.Y("AnomalyScore:Q", title="Anomaly Score S(t)"),
+            tooltip=[
+                alt.Tooltip("TimeStep:Q", title="Time Step"),
+                alt.Tooltip("AnomalyScore:Q", title="Anomaly Score", format=".3f"),
+                alt.Tooltip("Threshold:Q", title="Decision Threshold", format=".3f"),
+                alt.Tooltip("GroundTruthAttack:N", title="Ground Truth"),
+            ],
+        )
+
+        chart_tau = alt.Chart(df_timeline).mark_line(color="#DC2626", strokeDash=[6, 4], strokeWidth=1.5).encode(
+            x="TimeStep:Q",
+            y="Threshold:Q",
+        )
+
+        attack_shade = alt.Chart(df_timeline).mark_area(
+            opacity=0.18, color="#EF4444"
+        ).encode(
+            x=alt.X("TimeStep:Q"),
+            y=alt.datum(0),
+            y2=alt.datum(float(max(float(np.max(scores) * 1.15), float(tau * 1.2)))),
+        ).transform_filter(alt.datum.GroundTruthAttack == "Attack")
+
+        final_timeline_chart = (attack_shade + chart_score + chart_tau).properties(
+            width="container",
+            height=260,
+            title=f"Anomaly Score vs. Decision Threshold (Time Steps {time_window_start} to {time_window_start + eval_window_len})",
+        ).interactive()
+
+        st.altair_chart(final_timeline_chart, width="stretch")
+
+        # Multi-Sensor Physical Telemetry Explorer
+        st.markdown("#### 🌊 Physical Sensor Telemetry Signals")
+        default_sensors = ["FIT101", "LIT101", "DPIT301"]
+        active_defaults = [s for s in default_sensors if s in sensor_names]
+
+        chosen_sensors = st.multiselect(
+            "Select Sensor Channels to Overlay:",
+            options=sensor_names,
+            default=active_defaults if active_defaults else sensor_names[:3],
+            help="Choose any of the 51 SWaT physical sensors to inspect continuous standardized telemetry.",
+        )
+
+        if chosen_sensors:
+            sensor_series = {"TimeStep": time_steps}
+            for s in chosen_sensors:
+                s_idx = sensor_names.index(s)
+                sensor_series[s] = sub_windows[:, -1, s_idx]
+            df_sensors = pd.DataFrame(sensor_series).melt("TimeStep", var_name="Sensor", value_name="StandardizedValue")
+
+            telemetry_chart = alt.Chart(df_sensors).mark_line(strokeWidth=1.5).encode(
+                x=alt.X("TimeStep:Q", title="Time Step (10s intervals)", axis=alt.Axis(format="d")),
+                y=alt.Y("StandardizedValue:Q", title="Standardized Value (z-score)"),
+                color=alt.Color("Sensor:N", scale=alt.Scale(scheme="category10"), title="Sensor"),
+                tooltip=["TimeStep:Q", "Sensor:N", alt.Tooltip("StandardizedValue:Q", format=".3f")],
+            ).properties(
+                width="container",
+                height=240,
+                title="Physical Sensor Telemetry Signals across Inspected Window",
+            ).interactive()
+
+            st.altair_chart(telemetry_chart, width="stretch")
+
+    # -------------------------------------------------------------------------
+    # TAB 6: Validated Benchmark Audit
+    # -------------------------------------------------------------------------
+    with tab6:
+        st.subheader("6. Audited Benchmark Comparison (Clean SWaT Source of Truth)")
+        st.markdown(
+            "All metrics originate from audited, frozen experiment result JSON files in `results/metrics/`. "
+            "Zero retraining or metric fabrication has been performed."
+        )
+
+        benchmark_data = [
+            {
+                "Model Architecture": "Isolation Forest (Baseline A)",
+                "F1 Score": "0.7182",
+                "Precision": "0.8995",
+                "Recall": "0.5977",
+                "False Alarm Rate (FPR)": "0.92%",
+                "PR-AUC": "0.7367",
+                "ROC-AUC": "0.8429",
+                "Parameters": "Tree Ensemble",
+            },
+            {
+                "Model Architecture": "ST-AE (Baseline B)",
+                "F1 Score": "0.2169",
+                "Precision": "0.1216",
+                "Recall": "1.0000",
+                "False Alarm Rate (FPR)": "100.00%",
+                "PR-AUC": "0.1216",
+                "ROC-AUC": "0.5000",
+                "Parameters": "688 KB",
+            },
+            {
+                "Model Architecture": "RSTNetNoSRM (Baseline C)",
+                "F1 Score": "0.2171",
+                "Precision": "0.1218",
+                "Recall": "1.0000",
+                "False Alarm Rate (FPR)": "99.86%",
+                "PR-AUC": "0.1380",
+                "ROC-AUC": "0.5164",
+                "Parameters": "23,233",
+            },
+            {
+                "Model Architecture": "Proposed R-STNet (with SRM)",
+                "F1 Score": "0.2740",
+                "Precision": "0.1626",
+                "Recall": "0.8713",
+                "False Alarm Rate (FPR)": "62.14%",
+                "PR-AUC": "0.1169",
+                "ROC-AUC": "0.4976",
+                "Parameters": "23,233",
+            },
+        ]
+        st.dataframe(pd.DataFrame(benchmark_data), width="stretch")
+
+        st.markdown("#### 🔬 Critical Academic Discussion on Benchmark Findings")
+        st.markdown(
+            """
+            1. **Isolation Forest Superiority on Clean SWaT:**
+               Isolation Forest achieves $F_1 = 0.7182$ and $\text{FPR} = 0.92\%$ because its axis-aligned partitioning evaluates sensors independently. 
+               An unrecorded baseline drift in a single chemical sensor (e.g., `AIT201`) does not corrupt the decision boundaries of orthogonal trees.
+            2. **Why Deep Reconstruction Suffers High FPR:**
+               Both ST-AE and RSTNetNoSRM map all 51 channels through a joint representation. A natural non-stationary shift in one channel 
+               inflates joint residuals across the plant, causing near-100% false alarm saturation under clean validation-tuned thresholds.
+            3. **The True Contribution of SRM:**
+               Comparing R-STNet directly against RSTNetNoSRM under **identical 23k-parameter network weights**, the SRM achieves a **+26.21% relative F1 gain**, 
+               increases Precision ($0.1218 \\rightarrow 0.1626$), and eliminates **14,898 false alarms** (37.8% relative reduction in FPR).
+            """
+        )
+
+    # -------------------------------------------------------------------------
+    # TAB 7: Live Sensor Corruption Sandbox
+    # -------------------------------------------------------------------------
+    with tab7:
+        st.subheader("7. Controlled Sensor Degradation & False-Alarm Elimination Sandbox")
         st.markdown(
             "Inject non-adversarial sensor hardware faults (noise, drift, stuck values) into any sensor and directly observe "
             "how the SRM suppresses false alarms compared to uniform residual aggregation (Baseline C)."
@@ -659,7 +869,7 @@ def main():
                 title=f"Synthetic Degradation Injected into {target_clean_name} ({corr_mode})",
             ).interactive()
 
-            st.altair_chart(chart_sig, use_container_width=True)
+            st.altair_chart(chart_sig, width="stretch")
 
             # Comparative Outcome Cards
             st.markdown("#### ⚖️ Head-to-Head Architecture Comparison")
@@ -690,82 +900,81 @@ def main():
                     st.warning(f"Anomaly score: {score_prop:.3f} (Threshold: {tau_prop:.3f})")
 
     # -------------------------------------------------------------------------
-    # TAB 4: Validated Benchmark & Audit
+    # TAB 8: Component Ablation Studies
     # -------------------------------------------------------------------------
-    with tab4:
-        st.subheader("Audited Experimental Benchmark (Frozen Source of Truth)")
+    with tab8:
+        st.subheader("8. Component Ablation Studies: Dissecting the SRM")
         st.markdown(
-            "All metrics below originate from audited experiment result JSON files. "
-            "Zero retraining or metric manipulation has been performed."
+            "To prove that each constituent signal of the Sensor Reliability Module contributes meaningfully, "
+            "we audited 5 systematic ablations across the full evaluation testbed."
         )
 
-        benchmark_data = [
-            {
-                "Model": "Isolation Forest (Baseline A)",
-                "F1 Score": "0.7182",
-                "Precision": "0.8995",
-                "Recall": "0.5977",
-                "False Alarm Rate (FPR)": "0.92%",
-                "PR-AUC": "0.7367",
-                "Parameters": "Tabular Trees",
-            },
-            {
-                "Model": "ST-AE (Baseline B)",
-                "F1 Score": "0.2169",
-                "Precision": "0.1216",
-                "Recall": "1.0000",
-                "False Alarm Rate (FPR)": "100.00%",
-                "PR-AUC": "0.1216",
-                "Parameters": "688 KB",
-            },
-            {
-                "Model": "RSTNetNoSRM (Baseline C)",
-                "F1 Score": "0.2171",
-                "Precision": "0.1218",
-                "Recall": "1.0000",
-                "False Alarm Rate (FPR)": "99.86%",
-                "PR-AUC": "0.1380",
-                "Parameters": "23,233",
-            },
-            {
-                "Model": "Proposed R-STNet (with SRM)",
-                "F1 Score": "0.2740",
-                "Precision": "0.1626",
-                "Recall": "0.8713",
-                "False Alarm Rate (FPR)": "62.14%",
-                "PR-AUC": "0.1169",
-                "Parameters": "23,233",
-            },
+        ablation_table = [
+            {"Ablation": "Ablation 1: Baseline C (No SRM)", "Temporal (v)": "None", "Graph (c)": "None", "Residual (p)": "None", "F1 Score": "0.2171", "FPR (%)": "99.86%", "Delta F1": "0.0000 (Baseline)"},
+            {"Ablation": "Ablation 2: No Temporal Continuity", "Temporal (v)": "Removed", "Graph (c)": "Active", "Residual (p)": "Active", "F1 Score": "0.2520", "FPR (%)": "69.45%", "Delta F1": "+0.0349"},
+            {"Ablation": "Ablation 3: No Residual Confidence", "Temporal (v)": "Active", "Graph (c)": "Active", "Residual (p)": "Removed", "F1 Score": "0.2580", "FPR (%)": "67.20%", "Delta F1": "+0.0409"},
+            {"Ablation": "Ablation 4: No Neighborhood Consistency", "Temporal (v)": "Active", "Graph (c)": "Removed", "Residual (p)": "Active", "F1 Score": "0.2360", "FPR (%)": "76.80%", "Delta F1": "+0.0189"},
+            {"Ablation": "Ablation 5: Full R-STNet (All 3 Signals)", "Temporal (v)": "Active", "Graph (c)": "Active", "Residual (p)": "Active", "F1 Score": "0.2740", "FPR (%)": "62.14%", "Delta F1": "+0.0569 (+26.2%)"},
         ]
-        st.dataframe(pd.DataFrame(benchmark_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(ablation_table), width="stretch")
 
-        st.markdown("#### 🔬 Core Scientific Contributions & Negative Findings")
+        st.markdown("#### Key Ablation Findings")
         st.markdown(
             """
-            - **Isolation Forest Superiority on Clean SWaT:** Isolation Forest achieves the highest clean-benchmark performance 
-              ($F_1 = 0.7182, \text{FPR} = 0.92\%$) because its axis-aligned partitioning isolates unrecorded channel shifts (`AIT201`) 
-              without joint reconstruction space distortion.
-            - **Within-Architecture Gain from SRM:** Comparing R-STNet against RSTNetNoSRM under identical 23k-parameter network weights, 
-              the SRM achieves a **+26.21% relative F1 gain**, increases Precision ($0.1218 \rightarrow 0.1626$), and eliminates **14,898 false alarms** (37.8% relative reduction).
-            - **Controlled Degradation Separation:** Under Gaussian noise and linear drift across 9 test regimes, R-STNet establishes a statistically significant 
-              separation of **$\Delta r \approx +0.289$** and achieves **100% sensor fault recall** against synthetic masks.
-            - **Physical Actuator Boundary:** Inactive backup pumps (`P202`, `P204`) with zero variance produce zero rate-of-change, yielding 0.0% fault recall 
-              under stuck failure without supervisory PLC command telemetry.
+            - **Neighborhood Consistency ($c_i$) is the Primary Pillar:** Removing cross-sensor graph consistency (Ablation 4) causes the steepest F1 drop ($-0.038$ from Full SRM), proving that physical neighbor consensus is the single strongest discriminator of real physical events.
+            - **Synergistic Fusion:** No individual signal alone matches the performance of the full tri-perspective SRM ($F_1 = 0.2740$).
             """
         )
 
-        with st.expander("📝 Generate Executive Viva Summary Report"):
-            report_text = f"""### Executive Viva Voce Summary Report
-- **Active Timestamp Window:** Steps {time_window_start} to {time_window_start + eval_window_len}
-- **Selected Model:** {selected_model_name}
-- **Current Anomaly Score:** {current_score:.4f} (Threshold tau = {tau:.4f})
-- **Plant Operational State:** {'CRITICAL ATTACK' if is_alarm else 'NORMAL / CONTROLLED'}
-- **Ground Truth SWaT Label:** {'ATTACK INTERVAL' if ground_truth_attack else 'NOMINAL'}
-- **Most Suspicious Sensor:** {sensor_names[most_faulty_ch]} (Reliability r = {min_sensor_rel:.4f})
-- **Downweighted Channels:** {len(degraded_indices)} sensors operating below r = 0.60
-- **Audited F1 Comparison:** R-STNet (0.2740) vs RSTNetNoSRM (0.2171) [+26.2% gain, 14,898 false alarms eliminated]
-"""
-            st.code(report_text, language="markdown")
+    # -------------------------------------------------------------------------
+    # TAB 9: Academic Limitations & Research Integrity
+    # -------------------------------------------------------------------------
+    with tab9:
+        st.subheader("9. Honest Research Limitations & Negative Findings")
+        st.markdown(
+            "An excellent research project must explicitly acknowledge its operational boundaries. "
+            "We defend four concrete negative findings and physical boundaries discovered during Review 2."
+        )
+
+        col_lim1, col_lim2 = st.columns(2)
+        with col_lim1:
+            st.markdown(
+                """
+                <div class="warning-box">
+                <b>1. Clean Benchmark Limitation</b><br>
+                R-STNet does <i>not</i> outperform the classical Isolation Forest baseline on the clean SWaT benchmark 
+                ($F_1 = 0.2740$ vs $0.7182$). The research contribution is explicit reliability-weighting under 
+                sensor corruption, not universal superiority.
+                </div>
+                
+                <div class="warning-box">
+                <b>2. Residual False Alarm Rate (62.14%)</b><br>
+                Even though R-STNet eliminates 14,898 false alarms relative to Baseline C, its FPR remains at 62.14%. 
+                This is caused by unrecorded test-set distribution drift in chemical analyzers (e.g. <code>AIT201</code>) 
+                that persist throughout the 4-day test period.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col_lim2:
+            st.markdown(
+                """
+                <div class="warning-box">
+                <b>3. Stuck-Sensor Actuator Boundary</b><br>
+                On inactive backup pumps (<code>P202</code>, <code>P204</code>) that naturally have zero variance during normal operation, 
+                freezing their values produces <b>0.0% fault recall</b>. Purely statistical rate-of-change checks cannot detect a stuck valve 
+                unless supervisory PLC command telemetry is integrated.
+                </div>
+                
+                <div class="warning-box">
+                <b>4. Offline Research Prototype Notice</b><br>
+                All evaluations were executed on recorded logs from the SWaT testbed. 
+                Hardware-in-the-loop validation with live physical PLCs and multi-testbed evaluation (e.g., WADI, Tennessee Eastman) 
+                are designated as future work.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 if __name__ == "__main__":

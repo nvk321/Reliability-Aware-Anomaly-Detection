@@ -74,6 +74,7 @@ def check_folders():
         "report",
         "docs",
         "presentation",
+        "notebooks",
     ]
     missing = [d for d in expected_dirs if not (PROJECT_ROOT / d).is_dir()]
     if missing:
@@ -207,6 +208,7 @@ def main():
     checks = [
         ("Environment", check_environment),
         ("Dependencies", check_dependencies),
+        ("Directories", check_folders),
         ("Dataset", check_dataset_and_preprocessing),
         ("Preprocessing", check_dataset_and_preprocessing),
         ("Checkpoints", check_checkpoints),
